@@ -1,0 +1,114 @@
+name: Deploy
+
+# Manual promotion to Azure: QA first, production behind the environment's required reviewers.
+# Uses OpenID Connect, so no Azure credentials are stored in GitHub.
+# Required per environment: vars AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
+# AZURE_RESOURCE_GROUP, SQL_ADMIN_GROUP_ID, SQL_ADMIN_GROUP_NAME, API_AUDIENCE.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Where to deploy
+        type: choice
+        options: [qa, production]
+        default: qa
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Build the release package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build
+        run: |
+          (cd web && npm ci && npm run build)
+          dotnet publish src/LabRoster.Api --configuration Release --output out/api
+          dotnet publish src/LabRoster.Migrator --configuration Release --output out/migrator
+          mkdir -p out/api/wwwroot
+          cp -r web/dist/labroster-web/browser/. out/api/wwwroot/
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release
+          path: out
+
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    needs: package
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: release
+          path: out
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Provision infrastructure
+        id: infra
+        uses: azure/arm-deploy@v2
+        with:
+          scope: resourcegroup
+          resourceGroupName: ${{ vars.AZURE_RESOURCE_GROUP }}
+          template: infra/main.bicep
+          parameters: >-
+            environmentName=${{ inputs.environment }}
+            sqlAdminGroupObjectId=${{ vars.SQL_ADMIN_GROUP_ID }}
+            sqlAdminGroupName=${{ vars.SQL_ADMIN_GROUP_NAME }}
+            apiAudience=${{ vars.API_AUDIENCE }}
+          deploymentName: labroster-${{ inputs.environment }}-${{ github.run_number }}
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      # The pipeline identity belongs to the SQL admin group, so it migrates with an Entra token
+      # and grants the web app's managed identity the api schema. No SQL passwords exist anywhere.
+      - name: Migrate the database
+        run: >-
+          dotnet out/migrator/LabRoster.Migrator.dll
+          --connection "Server=tcp:${{ steps.infra.outputs.sqlServerFqdn }},1433;Database=${{ steps.infra.outputs.databaseName }};Authentication=Active Directory Default;Encrypt=True"
+          --app-entra-principal "${{ steps.infra.outputs.webAppName }}"
+
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ steps.infra.outputs.webAppName }}
+          package: out/api
+
+      - name: Smoke test
+        run: |
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail "https://${{ steps.infra.outputs.webAppHostName }}/health/ready"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The new release did not become ready. Check Application Insights, then redeploy the previous run."
+          exit 1
