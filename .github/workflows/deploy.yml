@@ -47,7 +47,7 @@ jobs:
           mkdir -p out/api/wwwroot
           cp -r web/dist/labroster-web/browser/. out/api/wwwroot/
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: release
           path: out
