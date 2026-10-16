@@ -42,6 +42,7 @@ Integration tests are skipped, not passed, when `LABROSTER_TEST_SQL` is missing.
 - Retries reuse the same `Idempotency-Key` and only retry `isRetryable` errors.
 - Show API problems with `toProblem`; map field errors back onto the form with `fieldErrors`.
 - Add a `data-testid` only where a role or label cannot identify the element.
+- Regenerate `web/package-lock.json` with the npm that CI uses (the one bundled with Node 24). `@emnapi/core` and `@emnapi/runtime` are listed as dev dependencies only so that every npm version writes them into the lock file; the build's WebAssembly fallback needs them and `npm ci` fails without them.
 
 ## Definition of done
 
