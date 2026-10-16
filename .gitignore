@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+.vs/
+out/
+
+# Node and Angular
+node_modules/
+web/dist/
+web/.angular/
+web/test-results/
+web/playwright-report/
+web/blob-report/
+
+# API static files are copied from the Angular build at release time
+src/LabRoster.Api/wwwroot/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/

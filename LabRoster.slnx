@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LabRoster.Api/LabRoster.Api.csproj" />
+    <Project Path="src/LabRoster.Migrator/LabRoster.Migrator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LabRoster.Api.Tests/LabRoster.Api.Tests.csproj" />
+  </Folder>
+</Solution>
