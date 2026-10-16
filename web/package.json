@@ -1,0 +1,36 @@
+{
+  "name": "labroster-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --proxy-config proxy.conf.json",
+    "build": "ng build",
+    "test": "ng test --watch=false",
+    "e2e": "playwright test"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "packageManager": "npm@11.6.2",
+  "dependencies": {
+    "@angular/common": "21.2.25",
+    "@angular/compiler": "21.2.25",
+    "@angular/core": "21.2.25",
+    "@angular/forms": "21.2.25",
+    "@angular/platform-browser": "21.2.25",
+    "@angular/router": "21.2.25",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "21.2.24",
+    "@angular/cli": "21.2.24",
+    "@angular/compiler-cli": "21.2.25",
+    "@playwright/test": "1.63.0",
+    "jsdom": "28.1.0",
+    "prettier": "3.8.5",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

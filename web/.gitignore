@@ -1,0 +1,8 @@
+/dist
+/out-tsc
+/node_modules
+/.angular/cache
+/coverage
+/test-results
+/playwright-report
+/blob-report
