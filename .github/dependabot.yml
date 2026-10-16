@@ -1,24 +1,39 @@
 version: 2
+
+# One grouped pull request per ecosystem, minor and patch versions only. Major upgrades (Angular, .NET,
+# TypeScript) get a planned PR of their own rather than a weekly surprise.
 updates:
   - package-ecosystem: nuget
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
-      aspnetcore:
-        patterns: ["Microsoft.AspNetCore.*"]
-      test:
-        patterns: ["xunit*", "Microsoft.NET.Test.Sdk"]
+      nuget:
+        patterns: ["*"]
 
   - package-ecosystem: npm
     directory: /web
     schedule:
       interval: weekly
+    open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
-      angular:
-        patterns: ["@angular/*", "@angular-devkit/*"]
+      web:
+        patterns: ["*"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      actions:
+        patterns: ["*"]
